@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import openai
+from openai import OpenAI
 import base64
 import os
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Initialize OpenAI client with the new v1.0+ syntax
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = Flask(__name__)
 CORS(app)
@@ -19,21 +20,24 @@ def rate_face():
     base64_image = base64.b64encode(image_bytes).decode('utf-8')
 
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4-vision-preview",
+        # Use the new OpenAI API syntax
+        response = client.chat.completions.create(
+            model="gpt-4o",
             messages=[
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "Rate this face from 1 to 10 for attractiveness. Just return a number."},
+                        {"type": "text", "text": "What is the hair color in this image? One word answer."},
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                     ],
                 }
             ],
             max_tokens=10
         )
-        rating = response['choices'][0]['message']['content'].strip()
+        
+        rating = response.choices[0].message.content.strip()
         return jsonify({'rating': rating})
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
